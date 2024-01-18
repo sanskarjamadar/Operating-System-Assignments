@@ -1,0 +1,90 @@
+*** ./temp/linux-5.18.2/arch/x86/entry/syscalls/syscall_64.tbl	2022-06-06 12:19:00.000000000 +0530
+--- linux-5.18.2/arch/x86/entry/syscalls/syscall_64.tbl	2023-02-06 18:35:25.969057469 +0530
+***************
+*** 372,377 ****
+--- 372,378 ----
+  448	common	process_mrelease	sys_process_mrelease
+  449	common	futex_waitv		sys_futex_waitv
+  450	common	set_mempolicy_home_node	sys_set_mempolicy_home_node
++ 451	common	hello		sys_hello
+  
+  #
+  # Due to a historical design error, certain syscalls are numbered differently
+*** ./temp/linux-5.18.2/include/linux/syscalls.h	2022-06-06 12:19:00.000000000 +0530
+--- linux-5.18.2/include/linux/syscalls.h	2023-02-06 18:34:15.501385292 +0530
+***************
+*** 1385,1388 ****
+--- 1385,1389 ----
+  		int __user *optlen);
+  int __sys_setsockopt(int fd, int level, int optname, char __user *optval,
+  		int optlen);
++ asmlinkage long sys_hello(void); 
+  #endif
+*** ./temp/linux-5.18.2/Makefile	2022-06-06 12:19:00.000000000 +0530
+--- linux-5.18.2/Makefile	2023-02-06 18:33:19.120124106 +0530
+***************
+*** 1089,1095 ****
+  export MODULES_NSDEPS := $(extmod_prefix)modules.nsdeps
+  
+  ifeq ($(KBUILD_EXTMOD),)
+! core-y			+= kernel/ certs/ mm/ fs/ ipc/ security/ crypto/
+  core-$(CONFIG_BLOCK)	+= block/
+  
+  vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, \
+--- 1089,1095 ----
+  export MODULES_NSDEPS := $(extmod_prefix)modules.nsdeps
+  
+  ifeq ($(KBUILD_EXTMOD),)
+! core-y			+= kernel/ certs/ mm/ fs/ ipc/ security/ crypto/ hello/
+  core-$(CONFIG_BLOCK)	+= block/
+  
+  vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, \
+*** ./temp/linux-5.18.2/hello/hello.c	2023-02-08 18:28:16.783764103 +0530
+--- linux-5.18.2/hello/hello.c	2023-02-06 18:32:15.779205557 +0530
+***************
+*** 0 ****
+--- 1,9 ----
++ #include <linux/kernel.h> 
++ #include <linux/syscalls.h> 
++  
++ SYSCALL_DEFINE0(hello) 
++  
++ { 
++     printk("Hello, from inside Linux kernel\n");// ignore colouring here 
++     return 0; 
++ } 
+*** Desktop/hello.c	2023-02-08 18:34:33.082077793 +0530
+--- hello.c	2023-02-08 18:38:35.225308373 +0530
+***************
+*** 0 ****
+--- 1,30 ----
++ #include <linux/kernel.h>
++ #include <sys/syscall.h>
++ #include <stdio.h>
++ #include <unistd.h>
++ #include <string.h>
++ #include <errno.h>
++ 
++ #define __NR_hello 451
++ 
++ long hello_syscall(void)
++ {
++     return syscall(__NR_hello);
++ }
++ 
++ int main(int argc, char *argv[])
++ {
++     long activity;
++     activity = hello_syscall();
++ 
++     if(activity < 0)     {
++         perror("System call failed\n");
++     }
++ 
++     else     {
++         printf("System call worked!\n"); // ignore colouring here
++     }
++ 
++     return 0;
++ }
++ 
